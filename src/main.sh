@@ -2,14 +2,15 @@
 source "$(dirname "$0")/commit.sh"
 source "$(dirname "$0")/scope.sh"
 source "$(dirname "$0")/issue.sh"
+source "$(dirname "$0")/error.sh"
 
 main() {
     get_commit_type
     ask_for_scope
     while true; do
-        read -p "Enter your commit message: " MESSAGE
+        read -e -r -p "Enter your commit message: " MESSAGE
         if [[ -z "$MESSAGE" ]]; then
-            echo "A commit message is required. Please enter a message."
+            print_error "A commit message is required. Please enter a message."
         else
             MESSAGE=$(echo "$MESSAGE" | tr '[:upper:]' '[:lower:]')
             break

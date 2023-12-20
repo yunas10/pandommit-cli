@@ -1,0 +1,84 @@
+#!/bin/bash
+
+get_commit_type() {
+    # Create the commit types array
+    local commit_types=("🌟 feat: New feature" 
+                        "🐛 fix: Bug fix"
+                        "📚 docs: Documentation changes"
+                        "🪄 style: Code style changes"
+                        "🚀 perf: Performance improvements"
+                        "✅ test: Adding missing tests"
+                        "🛠️ refactor: Code refactoring"
+                        "📦 chore: Changes to build process"
+                        "🔧 build: Affecting build system"
+                        "🎢 ci: CI configuration changes"
+                        "🛟 deps: Update/add dependencies")
+
+        # Prompt the user to select a commit type
+        TYPE=$(printf '%s\n' "${commit_types[@]}" | fzf --height 50% --reverse \
+        --color "fg:#ffffff,hl:#af5fff" \
+        --color "fg+:#c061ff,hl+:#c061ff" \
+        --color "info:#af5fff,prompt:#af5fff,pointer:#af5fff" \
+        --no-info)
+    if [ -z "$TYPE" ]; then
+        echo "Commit type selection cancelled."
+        exit 1
+    fi
+
+    # Extract the commit message emoji and type
+    EMOJI=$(echo $TYPE | awk '{print $1}')
+    TYPE=$(echo $TYPE | awk '{print $2}' | sed 's/:$//')
+}
+
+
+ask_for_scope() {
+    read -p "Do you want to add a scope? (y/N) - [press enter to skip]: " add_scope
+    if [[ $add_scope =~ ^[Yy]$ ]]; then
+        read -p "Enter the scope: " SCOPE
+        SCOPE="($SCOPE)"
+    else
+        SCOPE=""
+    fi
+}
+
+
+
+ask_for_issue() {
+    read -p "Does this commit resolve an issue? (y/N) - [press enter to skip]: " resolve_issue
+    if [[ $resolve_issue =~ ^[Yy]$ ]]; then
+        read -p "Enter the issue number (e.g., 42): " ISSUE_NUMBER
+        ISSUE_REF=" - (#${ISSUE_NUMBER})"
+    else
+        ISSUE_REF=""
+    fi
+}
+
+
+
+print_error() {
+    local red=$(tput setaf 1)
+    local reset=$(tput sgr0)
+    echo -e "\r${red}Error: $1${reset}"
+}
+
+
+main() {
+    get_commit_type
+    ask_for_scope
+    while true; do
+        read -e -r -p "Enter your commit message: " MESSAGE
+        if [[ -z "$MESSAGE" ]]; then
+            print_error "A commit message is required. Please enter a message."
+        else
+            MESSAGE=$(echo "$MESSAGE" | tr '[:upper:]' '[:lower:]')
+            break
+        fi
+    done
+
+    ask_for_issue
+    COMMIT_MESSAGE="$EMOJI$TYPE$SCOPE: $MESSAGE$ISSUE_REF"
+    echo "Your commit message: $COMMIT_MESSAGE"
+    git commit -m "$COMMIT_MESSAGE"
+}
+
+main
